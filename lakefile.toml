@@ -1,0 +1,10 @@
+name = "schema-csv"
+version = "0.1.0"
+defaultTargets = ["schema-csv"]
+
+[[lean_lib]]
+name = "SchemaCsv"
+
+[[lean_exe]]
+name = "schema-csv"
+root = "Main"
