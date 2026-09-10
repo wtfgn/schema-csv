@@ -34,11 +34,6 @@ def Schema.isWellFormed (s : Schema) : Bool :=
   s.fieldNames.Nodup &&
   s.fieldNames.all (not ∘ String.isEmpty ∘ toString)
 
-
--- Now the instance is immediate
-instance (s : Schema) : Decidable s.WellFormed :=
-  decidable_of_bool s.isWellFormed (by sorry)
-
 @[expose]
 def WellFormedSchema : Type :=
   { s : Schema // s.WellFormed }
