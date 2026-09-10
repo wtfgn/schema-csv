@@ -8,3 +8,7 @@ name = "SchemaCsv"
 [[lean_exe]]
 name = "schema-csv"
 root = "Main"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
