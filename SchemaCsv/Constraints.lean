@@ -9,7 +9,7 @@ namespace SchemaCsv
 /-- Constraints that apply to ALL field types -/
 structure CommonConstraints (t : FieldType)  where
   required : Bool := false
-  unique   : Bool := false
+  unique   : Bool := false -- This is just a declaration, not related to implementation directled
   enum     : Option (List t.asType) := none
 
 structure CollectionConstraints where
@@ -20,7 +20,7 @@ structure StringConstraints (t : FieldType) extends CommonConstraints t, Collect
   -- TODO: This constraint is sepcific to string
   -- This represents reguralr expression that can be used to test field values
   -- Maybe a Lean regex parser is needed
-  -- pattern   : Option String := none
+  pattern   : Option String := none
 
 structure IntegerConstraints (t : FieldType) extends CommonConstraints t where
   minimum : Option Int := none
@@ -68,6 +68,7 @@ def optEnum {α : Type} (e : Option (List α)) (x : α) : Prop :=
 instance {α : Type u} [LE α] [DecidableLE α] (bound : Option α) (n : α) :
     Decidable (optLower bound n) := by
   cases bound <;> dsimp [optLower] <;> infer_instance
+
 
 instance {α : Type u} [LE α] [DecidableLE α] (bound : Option α) (n : α) :
     Decidable (optUpper bound n) := by
