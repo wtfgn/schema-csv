@@ -26,13 +26,17 @@ def Schema.fieldNames (s : Schema) : List FieldName :=
     - field names are unique
     - (optional later) primaryKey / foreignKey names actually exist
 -/
-def Schema.WellFormed (s : Schema) : Prop :=
+abbrev Schema.WellFormed (s : Schema) : Prop :=
   (s.fieldNames.Nodup) ∧
-  (s.fieldNames.all (not ∘ String.isEmpty ∘ toString))
+  ∀ n ∈ s.fieldNames, n ≠ ""
 
 def Schema.isWellFormed (s : Schema) : Bool :=
-  s.fieldNames.Nodup &&
-  s.fieldNames.all (not ∘ String.isEmpty ∘ toString)
+  decide (s.fieldNames.Nodup) &&
+  s.fieldNames.all (fun n => !n.value.isEmpty)
+
+instance (s : Schema) : Decidable (s.WellFormed) := by
+  dsimp [Schema.WellFormed]
+  infer_instance
 
 @[expose]
 def WellFormedSchema : Type :=
