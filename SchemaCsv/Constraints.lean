@@ -17,7 +17,10 @@ structure CollectionConstraints where
   minLength : Option Nat := none
 
 structure StringConstraints (t : FieldType) extends CommonConstraints t, CollectionConstraints where
-  pattern   : Option String := none
+  -- TODO: This constraint is sepcific to string
+  -- This represents reguralr expression that can be used to test field values
+  -- Maybe a Lean regex parser is needed
+  -- pattern   : Option String := none
 
 structure IntegerConstraints (t : FieldType) extends CommonConstraints t where
   minimum : Option Int := none
