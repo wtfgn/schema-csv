@@ -1,2 +1,4 @@
 /.lake
 /.plan
+# Ignore anything with Test.lean
+Test*.lean
