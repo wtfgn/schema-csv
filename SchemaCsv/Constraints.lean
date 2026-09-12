@@ -11,26 +11,32 @@ structure CommonConstraints (t : FieldType)  where
   required : Bool := false
   unique   : Bool := false -- This is just a declaration, not related to implementation directled
   enum     : Option (List t.asType) := none
+  deriving Repr, DecidableEq
 
 structure CollectionConstraints where
   maxLength : Option Nat := none
   minLength : Option Nat := none
+  deriving Repr, DecidableEq
 
 structure StringConstraints (t : FieldType) extends CommonConstraints t, CollectionConstraints where
   -- TODO: This constraint is sepcific to string
   -- This represents reguralr expression that can be used to test field values
   -- Maybe a Lean regex parser is needed
-  pattern   : Option String := none
+  -- pattern   : Option String := none
+  deriving Repr, DecidableEq
 
 structure IntegerConstraints (t : FieldType) extends CommonConstraints t where
   minimum : Option Int := none
   maximum : Option Int := none
+  deriving Repr, DecidableEq
 
 structure NumberConstraints (t : FieldType) extends CommonConstraints t where
   minimum : Option Float := none
   maximum : Option Float := none
+  deriving Repr, DecidableEq
 
 structure BooleanConstraints (t : FieldType) extends CommonConstraints t where
+  deriving Repr, DecidableEq
 
 /-- Constraints that make sense for a given field type. -/
 @[expose]
@@ -46,6 +52,12 @@ def ConstraintsOf (t : FieldType) : Type :=
   -- ordered temporal / numeric-like
   -- | .date | .time | .datetime | .year | .yearmonth =>
   --     TemporalConstraints  -- minimum, maximum with the right payload type
+
+instance (t : FieldType) : Repr (ConstraintsOf t) := by
+  cases t <;> dsimp [ConstraintsOf] <;> infer_instance
+
+instance (t : FieldType) : DecidableEq (ConstraintsOf t) := by
+  cases t <;> dsimp [ConstraintsOf] <;> infer_instance
 
 @[expose]
 def optLower {α : Type u} [LE α] (bound : Option α) (n : α) : Prop :=

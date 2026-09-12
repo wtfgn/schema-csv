@@ -13,13 +13,21 @@ structure Schema where
   missingValues : Array String := #[""] -- default to be empty string
   primaryKey : Option $ List FieldName := none
   foreignKey : Option $ List FieldName := none
-  -- deriving Repr, BEq
+  deriving Repr, DecidableEq
 
 def Schema.types (s : Schema) : List FieldType :=
   s.fields.map (·.type)
 
 def Schema.fieldNames (s : Schema) : List FieldName :=
   s.fields.map (·.name)
+
+def Schema.uniqueFields (s : Schema) : List Field :=
+  s.fields.filter (fun f =>
+    match f.type, f.constraints with
+    | .string, c => c.unique
+    | .integer, c => c.unique
+    | .number, c => c.unique
+    | .boolean, c => c.unique)
 
 /-- A schema is well-formed when:
     - every field name is non-empty

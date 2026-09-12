@@ -25,12 +25,18 @@ inductive FieldType where
   | integer
   | number
   | boolean
-  deriving Repr, BEq, DecidableEq
+  deriving Repr, DecidableEq
 
 abbrev FieldType.asType : FieldType → Type
   | .string => String
   | .integer => Int
   | .number => Float
   | .boolean => Bool
+
+instance {t : FieldType} : Repr t.asType := by
+  cases t <;> dsimp [FieldType.asType] <;> infer_instance
+
+instance {t : FieldType} : DecidableEq t.asType := by
+  cases t <;> dsimp [FieldType.asType] <;> infer_instance
 
 end SchemaCsv

@@ -14,9 +14,9 @@ structure Field where
   exampleValue : Option String := none
   description : Option String := none
   constraints : ConstraintsOf type
-  -- deriving Repr, BEq
-  -- need a manual instance because of the dependent field
+  deriving Repr, DecidableEq
 
+@[expose]
 def Field.refinedType (f : Field) : Type :=
   match f.type, f.constraints with
   | .string, (c : StringConstraints .string) =>
@@ -48,8 +48,25 @@ def Field.required (f : Field) : Bool :=
   | .number,  (c : NumberConstraints .number) => c.required
   | .boolean, (c : BooleanConstraints .boolean) => c.required
 
+@[expose]
 def Field.cellType (f : Field) : Type :=
   let P := f.refinedType
   if f.required then P else Option P
+
+instance {f : Field} : DecidableEq f.refinedType := by
+  cases f with
+  | mk _ type =>
+      cases type <;> simp [Field.refinedType] <;> infer_instance
+
+instance {f : Field} : Repr f.refinedType := by
+  cases f with
+  | mk _ type =>
+      cases type <;> simp [Field.refinedType] <;> infer_instance
+
+instance {f : Field} : Repr f.cellType := by
+  by_cases h : f.required = true <;> simp [Field.cellType, h] <;> infer_instance
+
+instance {f : Field} : DecidableEq f.cellType := by
+  by_cases h : f.required = true <;> simp [Field.cellType, h] <;> infer_instance
 
 end SchemaCsv
