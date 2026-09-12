@@ -50,7 +50,10 @@ instance (s : Schema) : Decidable (s.WellFormed) := by
 def WellFormedSchema : Type :=
   { s : Schema // s.WellFormed }
 
-def Schema.mkWf (s : Schema) (h : s.WellFormed := by decide) : WellFormedSchema :=
+def Schema.mkWf
+    (s : Schema)
+    (h : s.WellFormed := by decide)
+    : WellFormedSchema :=
   ⟨s, h⟩
 
 end SchemaCsv
