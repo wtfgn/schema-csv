@@ -41,6 +41,7 @@ def Field.refinedType (f : Field) : Type :=
   | .boolean, (c : BooleanConstraints .boolean) =>
       { b : Bool // optEnum c.enum b }
 
+@[expose]
 def Field.required (f : Field) : Bool :=
   match f.type, f.constraints with
   | .string,  (c : StringConstraints .string) => c.required
