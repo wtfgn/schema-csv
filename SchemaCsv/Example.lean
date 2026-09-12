@@ -7,6 +7,7 @@ def pid : Field := {
   type := .integer,
   constraints := {
     required := true,
+    unique := true,
     enum := some [1, 2, 3]
   }
 }
@@ -16,7 +17,6 @@ def name : Field := {
   constraints := {
     minLength := some 1
     maxLength := some 10
-    pattern := some ".*"
     enum := ["alice", "tom", "billy"]
   }
 }
@@ -41,16 +41,23 @@ def alice : Row people :=
   .nil
 
 def tom : Row people :=
-  .cons ⟨1, by decide⟩ <|
+  .cons ⟨2, by decide⟩ <|
   .cons (some ⟨"tom", by decide⟩) <|
   .cons (some ⟨14, by decide⟩) .nil
 
 def billy : Row people :=
-  .cons ⟨2, by decide⟩ <|
+  .cons ⟨3, by decide⟩ <|
   .cons (some ⟨"billy", by decide⟩) <|
   .cons none .nil
 
-def peopleTable : Table people :=
-  [ alice
-  , tom
-  , billy ]
+def peopleTable : WellFormedTable people :=
+  Table.mkWf
+    [ alice
+    , tom
+    , billy ]
+
+#eval (Schema.uniqueFields people.val).map (fun f => f.name.value) -- ["id"]
+
+#eval people.val == people.val
+#eval columnUnique peopleTable.val (HasColList.there (HasColList.there (HasColList.here rfl))) -- [1, 1, 2]
+
