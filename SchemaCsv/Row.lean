@@ -7,11 +7,10 @@ public section
 
 namespace SchemaCsv
 
-@[expose]
-def Row (s : WellFormedSchema) : Type :=
+abbrev Row (s : WellFormedSchema) : Type :=
   HList Field.cellType s.val.fields
 
-def Table (s : WellFormedSchema) : Type :=
+abbrev Table (s : WellFormedSchema) : Type :=
   List (Row s)
 
 inductive HasColList : SchemaFields → FieldName → Type where
@@ -72,5 +71,39 @@ def WellFormedSchema.findHasCol? (s : WellFormedSchema) (n : FieldName) :
 def Row.get {s : WellFormedSchema} {n : FieldName}
     (r : Row s) (h : HasCol s n) : Field.cellType (HasColList.field h) :=
   HasColList.get r h
+
+def Table.columnCells {s : WellFormedSchema} (t : Table s) (h : HasCol s n) :
+    List (Field.cellType h.field) :=
+  t.map (fun r => r.get h)
+
+/-- Get non-null values given a specific column -/
+def Table.columnValues {s : WellFormedSchema} (t : Table s) (h : HasCol s n) :
+    List h.field.refinedType := by
+  by_cases hr : h.field.required
+  · exact t.map fun r => by
+      simpa [Field.cellType, hr] using (r.get h)
+  · exact (t.map fun r => by
+      simpa [Field.cellType, hr] using (r.get h)).filterMap id
+
+/-- Check if a column contains only unique values -/
+def Table.columnUnique {s : WellFormedSchema} (t : Table s) (h : HasCol s n) : Bool :=
+  decide (t.columnValues h).Nodup
+
+/-- Check if the uniqueness constraint of all specified columns are satisfied -/
+def Table.uniqueOK {s : WellFormedSchema} (t : Table s) : Bool :=
+  s.val.uniqueFields.all fun f =>
+    match s.findHasCol? f.name with
+    | none => true -- column without constraint just passes
+    | some h => columnUnique t h
+
+@[expose]
+def WellFormedTable (s : WellFormedSchema) : Type :=
+  { t : Table s // t.uniqueOK = true }
+
+def Table.mkWf {s : WellFormedSchema}
+    (t : Table s)
+    (h : t.uniqueOK := by decide)
+    : WellFormedTable s :=
+  ⟨t, h⟩
 
 end SchemaCsv
