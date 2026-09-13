@@ -89,20 +89,38 @@ def Table.columnValues {s : WellFormedSchema} (t : Table s) (h : HasCol s n) :
 def Table.columnUnique {s : WellFormedSchema} (t : Table s) (h : HasCol s n) : Bool :=
   decide (t.columnValues h).Nodup
 
+def Table.primaryKeyMatches {s : WellFormedSchema} (r₁ r₂ : Row s) : Bool :=
+  s.val.primaryKey.all fun n =>
+    match s.findHasCol? n with
+    | none => false
+    | some h => decide (r₁.get h = r₂.get h)
+
+def Table.primaryKeyOK {s : WellFormedSchema} (t : Table s) : Bool :=
+  let rec go : List (Row s) -> Bool
+  | [] => true
+  | r :: rs =>
+      !(rs.any (fun r' => primaryKeyMatches r r')) && go rs
+  s.val.primaryKey.isEmpty ∨ go t
+
 /-- Check if the uniqueness constraint of all specified columns are satisfied -/
 def Table.uniqueOK {s : WellFormedSchema} (t : Table s) : Bool :=
   s.val.uniqueFields.all fun f =>
     match s.findHasCol? f.name with
     | none => true -- column without constraint just passes
-    | some h => columnUnique t h
+    | some h => t.columnUnique h 
+
+abbrev Table.WellFormed {s : WellFormedSchema} (t : Table s) : Prop :=
+  t.uniqueOK ∧
+  t.primaryKeyOK
+  
 
 @[expose]
 def WellFormedTable (s : WellFormedSchema) : Type :=
-  { t : Table s // t.uniqueOK = true }
+  { t : Table s // t.WellFormed }
 
 def Table.mkWf {s : WellFormedSchema}
     (t : Table s)
-    (h : t.uniqueOK := by decide)
+    (h : t.WellFormed := by decide)
     : WellFormedTable s :=
   ⟨t, h⟩
 

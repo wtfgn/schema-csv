@@ -10,9 +10,9 @@ abbrev SchemaFields := List Field
 
 structure Schema where
   fields : SchemaFields
-  missingValues : Array String := #[""] -- default to be empty string
-  primaryKey : Option $ List FieldName := none
-  foreignKey : Option $ List FieldName := none
+  missingValues : List String := [""] -- default to be empty string
+  primaryKey : List FieldName := []
+  foreignKey : List FieldName := []
   deriving Repr, DecidableEq
 
 def Schema.types (s : Schema) : List FieldType :=
@@ -30,13 +30,19 @@ def Schema.uniqueFields (s : Schema) : List Field :=
     | .boolean, c => c.unique)
 
 /-- A schema is well-formed when:
-    - every field name is non-empty
     - field names are unique
-    - (optional later) primaryKey / foreignKey names actually exist
+    - every field name is non-empty
+    - PK combination is a subset of field names
+    - PK fields are unique
+    - PK fields are required
 -/
 abbrev Schema.WellFormed (s : Schema) : Prop :=
-  (s.fieldNames.Nodup) ∧
-  ∀ n ∈ s.fieldNames, n ≠ ""
+  s.fieldNames.Nodup ∧
+  ∀ n ∈ s.fieldNames, n ≠ "" ∧
+  s.primaryKey ⊆ s.fieldNames ∧
+  s.primaryKey.Nodup ∧
+  ∀ n ∈ s.primaryKey, ∃ f ∈ s.fields,
+    f.name = n ∧ f.required = true
 
 def Schema.isWellFormed (s : Schema) : Bool :=
   decide (s.fieldNames.Nodup) &&
