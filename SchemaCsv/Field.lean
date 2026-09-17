@@ -1,6 +1,7 @@
 module
 
 public import SchemaCsv.Constraints
+public import SchemaCsv.Format
 
 public section
 
@@ -10,7 +11,7 @@ structure Field where
   name : FieldName
   type : FieldType := .string
   title : Option String := none
-  format: Option String := none
+  format: FormatOf type := default
   exampleValue : Option String := none
   description : Option String := none
   constraints : ConstraintsOf type
