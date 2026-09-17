@@ -15,6 +15,7 @@ def name : Field := {
   name := "name",
   type := .string
   constraints := {
+    required := true
     minLength := some 1
     maxLength := some 10
     enum := ["alice", "tom", "billy"]
@@ -32,22 +33,24 @@ def age : Field := {
 
 def people : WellFormedSchema :=
   Schema.mkWf
-    { fields := [pid, name, age] }
+    { fields := [pid, name, age]
+      primaryKey := [pid.name, name.name]
+    }
 
 def alice : Row people :=
   .cons ⟨1, by decide⟩ <|
-  .cons (some ⟨"alice", by decide⟩) <|
+  .cons ( ⟨"alice", by decide⟩) <|
   .cons (some ⟨30, by decide⟩) <|
   .nil
 
 def tom : Row people :=
   .cons ⟨2, by decide⟩ <|
-  .cons (some ⟨"tom", by decide⟩) <|
+  .cons ( ⟨"tom", by decide⟩) <|
   .cons (some ⟨14, by decide⟩) .nil
 
 def billy : Row people :=
   .cons ⟨3, by decide⟩ <|
-  .cons (some ⟨"billy", by decide⟩) <|
+  .cons ( ⟨"billy", by decide⟩) <|
   .cons none .nil
 
 def peopleTable : WellFormedTable people :=
@@ -59,5 +62,8 @@ def peopleTable : WellFormedTable people :=
 #eval (Schema.uniqueFields people.val).map (fun f => f.name.value) -- ["id"]
 
 #eval people.val == people.val
-#eval columnUnique peopleTable.val (HasColList.there (HasColList.there (HasColList.here rfl))) -- [1, 1, 2]
+#eval peopleTable.val.columnCells <|
+  HasColList.there <|
+  HasColList.there <|
+  HasColList.here rfl -- [1, 1, 2]
 
