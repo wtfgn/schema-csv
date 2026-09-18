@@ -30,7 +30,7 @@ inductive FieldType where
 abbrev FieldType.asType : FieldType → Type
   | .string => String
   | .integer => Int
-  | .number => Float
+  | .number => Rat
   | .boolean => Bool
 
 instance {t : FieldType} : Repr t.asType := by
