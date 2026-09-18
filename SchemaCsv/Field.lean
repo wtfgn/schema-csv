@@ -34,7 +34,7 @@ def Field.refinedType (f : Field) : Type :=
           optEnum c.enum n
       }
   | .number, (c : NumberConstraints .number) =>
-      { x : Float //
+      { x : Rat //
           optLower c.minimum x ∧
           optUpper c.maximum x ∧
           optEnum c.enum x
