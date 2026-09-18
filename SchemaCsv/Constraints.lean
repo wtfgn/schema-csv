@@ -26,13 +26,13 @@ structure StringConstraints (t : FieldType) extends CommonConstraints t, Collect
   deriving Repr, DecidableEq
 
 structure IntegerConstraints (t : FieldType) extends CommonConstraints t where
-  minimum : Option Int := none
-  maximum : Option Int := none
+  minimum : Option t.asType := none
+  maximum : Option t.asType := none
   deriving Repr, DecidableEq
 
 structure NumberConstraints (t : FieldType) extends CommonConstraints t where
-  minimum : Option Float := none
-  maximum : Option Float := none
+  minimum : Option t.asType := none
+  maximum : Option t.asType := none
   deriving Repr, DecidableEq
 
 structure BooleanConstraints (t : FieldType) extends CommonConstraints t where
