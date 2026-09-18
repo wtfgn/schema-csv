@@ -30,6 +30,9 @@ def Schema.uniqueFields (s : Schema) : List Field :=
     | .number, c => c.unique
     | .boolean, c => c.unique)
 
+def Schema.fieldByName? (s : Schema) (n : FieldName) : Option Field :=
+  s.fields.find? (fun f => f.name = n)
+
 /-- A schema is well-formed when:
   - field names are unique
     - every field name is non-empty
