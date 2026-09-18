@@ -12,7 +12,8 @@ structure Schema where
   fields : SchemaFields
   missingValues : List String := [""] -- default to be empty string
   primaryKey : List FieldName := []
-  foreignKey : List FieldName := []
+  -- TODO: add foreign key support
+  -- foreignKey : List ForeignKey := []
   deriving Repr, DecidableEq
 
 def Schema.types (s : Schema) : List FieldType :=
@@ -30,7 +31,7 @@ def Schema.uniqueFields (s : Schema) : List Field :=
     | .boolean, c => c.unique)
 
 /-- A schema is well-formed when:
-    - field names are unique
+  - field names are unique
     - every field name is non-empty
     - PK combination is a subset of field names
     - PK fields are unique
@@ -43,10 +44,6 @@ abbrev Schema.WellFormed (s : Schema) : Prop :=
   s.primaryKey.Nodup ∧
   ∀ n ∈ s.primaryKey, ∃ f ∈ s.fields,
     f.name = n ∧ f.required = true
-
-def Schema.isWellFormed (s : Schema) : Bool :=
-  decide (s.fieldNames.Nodup) &&
-  s.fieldNames.all (fun n => !n.value.isEmpty)
 
 instance (s : Schema) : Decidable (s.WellFormed) := by
   dsimp [Schema.WellFormed]
