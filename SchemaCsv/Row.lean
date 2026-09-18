@@ -96,11 +96,14 @@ def Table.primaryKeyMatches {s : WellFormedSchema} (r₁ r₂ : Row s) : Bool :=
     | some h => decide (r₁.get h = r₂.get h)
 
 def Table.primaryKeyOK {s : WellFormedSchema} (t : Table s) : Bool :=
-  let rec go : List (Row s) -> Bool
-  | [] => true
-  | r :: rs =>
-      !(rs.any (fun r' => primaryKeyMatches r r')) && go rs
-  s.val.primaryKey.isEmpty ∨ go t
+  if s.val.primaryKey.isEmpty then
+    true
+  else
+    let rec go : List (Row s) -> Bool
+    | [] => true
+    | r :: rs =>
+        !(rs.any (fun r' => primaryKeyMatches r r')) && go rs
+    go t
 
 /-- Check if the uniqueness constraint of all specified columns are satisfied -/
 def Table.uniqueOK {s : WellFormedSchema} (t : Table s) : Bool :=
