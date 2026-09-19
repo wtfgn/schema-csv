@@ -16,10 +16,10 @@ structure Schema where
   -- foreignKey : List ForeignKey := []
   deriving Repr, DecidableEq
 
-def Schema.types (s : Schema) : List FieldType :=
+abbrev Schema.types (s : Schema) : List FieldType :=
   s.fields.map (·.type)
 
-def Schema.fieldNames (s : Schema) : List FieldName :=
+abbrev Schema.fieldNames (s : Schema) : List FieldName :=
   s.fields.map (·.name)
 
 def Schema.uniqueFields (s : Schema) : List Field :=
@@ -41,12 +41,12 @@ def Schema.fieldByName? (s : Schema) (n : FieldName) : Option Field :=
     - PK fields are required
 -/
 abbrev Schema.WellFormed (s : Schema) : Prop :=
-  s.fieldNames.Nodup ∧
-  ∀ n ∈ s.fieldNames, n ≠ "" ∧
-  s.primaryKey ⊆ s.fieldNames ∧
-  s.primaryKey.Nodup ∧
-  ∀ n ∈ s.primaryKey, ∃ f ∈ s.fields,
-    f.name = n ∧ f.required = true
+  (s.fieldNames.Nodup) ∧
+  (∀ n ∈ s.fieldNames, n ≠ "") ∧
+  (s.primaryKey ⊆ s.fieldNames) ∧
+  (s.primaryKey.Nodup) ∧
+  (∀ n ∈ s.primaryKey, ∃ f ∈ s.fields,
+    f.name = n ∧ f.required = true)
 
 instance (s : Schema) : Decidable (s.WellFormed) := by
   dsimp [Schema.WellFormed]
