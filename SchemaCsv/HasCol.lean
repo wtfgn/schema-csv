@@ -38,7 +38,8 @@ def HasColList.get {fs : SchemaFields} {n : FieldName}
   | @HasColList.there f rest _ h', .cons _ xs => HasColList.get xs h'
 
 /-- Lift to a well-formed schema. -/
-abbrev HasCol (s : WellFormedSchema) (n : FieldName) : Type :=
+@[expose]
+def HasCol (s : WellFormedSchema) (n : FieldName) : Type :=
   HasColList s.val.fields n
 
 abbrev HasCol.type {s : WellFormedSchema} {n : FieldName} (h : HasCol s n) : FieldType :=
