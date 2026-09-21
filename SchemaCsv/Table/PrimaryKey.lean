@@ -23,8 +23,7 @@ theorem HasCol.required_of_primaryKey
     HasColList.field_name h
   -- 3. Same name + both ∈ fields + Nodup names ⇒ same field
   have hNodup : s.val.fieldNames.Nodup := by
-    rcases s.property with ⟨hNodup, _⟩
-    exact hNodup
+    exact WellFormedSchema.fieldNames_nodup
   have hEq : h.field = f :=
     Schema.field_eq_of_name_eq hNodup hMem hfMem
       (hName.trans hname.symm)
