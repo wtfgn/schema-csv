@@ -49,10 +49,10 @@ def HasColList.get {fs : SchemaFields} {n : FieldName}
 def HasCol (s : WellFormedSchema) (n : FieldName) : Type :=
   HasColList s.val.fields n
 
-def HasCol.type {s : WellFormedSchema} {n : FieldName} (h : HasCol s n) : FieldType :=
+abbrev HasCol.type {s : WellFormedSchema} {n : FieldName} (h : HasCol s n) : FieldType :=
   HasColList.type h
 
-def HasCol.toIndex {s : WellFormedSchema} {n : FieldName} (h : HasCol s n) : Nat :=
+abbrev HasCol.toIndex {s : WellFormedSchema} {n : FieldName} (h : HasCol s n) : Nat :=
   HasColList.toIndex h
 
 def List.findHasCol? (fs : SchemaFields) (n : FieldName) :
