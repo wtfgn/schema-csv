@@ -62,4 +62,79 @@ def Schema.mkWf
     : WellFormedSchema :=
   ⟨s, h⟩
 
+theorem WellFormedSchema.fieldNames_nodup
+    {s : WellFormedSchema} :
+    (s.val.fieldNames.Nodup) := by
+  rcases s.property with
+    ⟨hNodup, _, _, _, _⟩
+  exact hNodup
+
+theorem WellFormedSchema.fieldNames_nonempty
+    {s : WellFormedSchema} {n : FieldName}
+    (hn : n ∈ s.val.fieldNames) :
+    n ≠ "" := by
+  rcases s.property with
+    ⟨_, hNonEmpty, _, _, _⟩
+  exact hNonEmpty n hn
+
+/-- From WellFormed: PK names are field names. -/
+theorem WellFormedSchema.primaryKey_subset_fieldNames
+    {s : WellFormedSchema} :
+    (s.val.primaryKey ⊆ s.val.fieldNames) := by
+  rcases s.property with
+    ⟨_, _, hSubset, _, _⟩
+  exact hSubset
+
+theorem WellFormedSchema.primaryKey_nodup
+    {s : WellFormedSchema} :
+    (s.val.primaryKey.Nodup) := by
+  rcases s.property with
+    ⟨_, _, _, hPkNodup, _⟩
+  exact hPkNodup
+
+/-- From WellFormed: each PK field is required. -/
+theorem WellFormedSchema.primaryKey_required
+    {s : WellFormedSchema} {n : FieldName}
+    (hn : n ∈ s.val.primaryKey) :
+    ∃ f ∈ s.val.fields, f.name = n ∧ f.required = true := by
+  rcases s.property with
+    ⟨_, _, _, _, hPkReq⟩
+  exact hPkReq n hn
+
+
+theorem List.eq_of_mem_of_name_eq_of_nodup
+    {α β} [DecidableEq β] (name : α → β)
+    {l : List α} (hs : (l.map name).Nodup)
+    {x y : α} (hx : x ∈ l) (hy : y ∈ l) (hne : name x = name y) :
+    x = y := by
+  induction l with
+  | nil => trivial
+  | cons a rest ih =>
+      have ⟨hna, hsRest⟩ := List.nodup_cons.mp hs
+      simp only [List.mem_cons] at hx hy
+      cases hx with
+      | inl hx =>
+          subst hx
+          cases hy with
+          | inl hy => exact hy.symm
+          | inr hy =>
+              exact absurd (List.mem_map.mpr ⟨y, hy, hne.symm⟩) hna
+      | inr hx =>
+          cases hy with
+          | inl hy =>
+              subst hy
+              exact absurd (List.mem_map.mpr ⟨x, hx, hne⟩) hna
+          | inr hy =>
+              exact ih hsRest hx hy
+
+theorem Schema.field_eq_of_name_eq
+    {s : Schema} (hs : s.fieldNames.Nodup)
+    {f₁ f₂ : Field}
+    (h₁ : f₁ ∈ s.fields) (h₂ : f₂ ∈ s.fields)
+    (hne : f₁.name = f₂.name) :
+    f₁ = f₂ := by
+  dsimp [Schema.fieldNames] at hs
+  exact List.eq_of_mem_of_name_eq_of_nodup (·.name) hs h₁ h₂ hne
+
+
 end SchemaCsv
