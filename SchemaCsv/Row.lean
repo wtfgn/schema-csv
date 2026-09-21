@@ -2,6 +2,7 @@ module
 
 public import SchemaCsv.HList
 public import SchemaCsv.Schema
+public import Mathlib.Data.List.Nodup
 
 public section
 
@@ -97,7 +98,7 @@ def Table.columnUnique {s : WellFormedSchema} (t : Table s) (h : HasCol s n) : B
 
 /-- Name membership in the field list. -/
 theorem List.findHasCol?_isSome_of_memName
-    (fs : SchemaFields) (n : FieldName)
+    {fs : SchemaFields} {n : FieldName}
     (h : n ∈ fs.map (·.name)) :
     (List.findHasCol? fs n).isSome := by
   induction fs with
@@ -112,12 +113,12 @@ theorem List.findHasCol?_isSome_of_memName
         simp [heq]
       · -- n must be in the tail names
         have htail : n ∈ rest.map (·.name) := by
-          simp at h
+          rw [List.map_cons, List.mem_cons] at h
           cases h with
           | inl hl => exact (heq hl.symm).elim
-          | inr hr => simp [hr]
+          | inr hr => exact hr
         -- ih gives (findHasCol? rest n).isSome
-        have := ih htail
+        have : (findHasCol? rest n).isSome := ih htail
         cases hfind : List.findHasCol? rest n with
         | none =>
             simp [hfind] at this
@@ -126,22 +127,14 @@ theorem List.findHasCol?_isSome_of_memName
 
 /-- If a field name is in the schema, then `findHasCol?` returns a witness. -/
 theorem WellFormedSchema.findHasCol?_isSome_of_mem
-    (s : WellFormedSchema) (n : FieldName)
+    {s : WellFormedSchema} {n : FieldName}
     (h : n ∈ s.val.fieldNames) :
     (s.findHasCol? n).isSome := by
-  exact List.findHasCol?_isSome_of_memName _ _ h
-
-theorem absurd_find_none
-    (s : WellFormedSchema) (n : FieldName)
-    (hin : n ∈ s.val.fieldNames)
-    (hnone : s.findHasCol? n = none) :
-    False := by
-  have := WellFormedSchema.findHasCol?_isSome_of_mem s n hin
-  simp [hnone] at this
+  exact List.findHasCol?_isSome_of_memName h
 
 /-- From WellFormed: PK names are field names. -/
 theorem WellFormedSchema.primaryKey_subset_fieldNames
-    (s : WellFormedSchema) :
+    {s : WellFormedSchema} :
     (s.val.primaryKey ⊆ s.val.fieldNames) := by
   rcases s.property with
     ⟨_, _, hSubset, _, _⟩
@@ -149,10 +142,114 @@ theorem WellFormedSchema.primaryKey_subset_fieldNames
 
 /-- From WellFormed: each PK field is required. -/
 theorem WellFormedSchema.primaryKey_required
-    (s : WellFormedSchema) (n : FieldName) (hn : n ∈ s.val.primaryKey) :
+    {s : WellFormedSchema} {n : FieldName}
+    (hn : n ∈ s.val.primaryKey) :
     ∃ f ∈ s.val.fields, f.name = n ∧ f.required = true := by
   rcases s.property with ⟨_, _, _, _, hPkReq⟩
   exact hPkReq n hn
+
+theorem HasColList.field_name
+    {fs n} (h : HasColList fs n) :
+    h.field.name = n := by
+  induction h with
+  | here eq => exact eq
+  | there _ ih => exact ih
+
+theorem List.eq_of_mem_of_name_eq_of_nodup
+    {α β} [DecidableEq β] (name : α → β)
+    {l : List α} (hs : (l.map name).Nodup)
+    {x y : α} (hx : x ∈ l) (hy : y ∈ l) (hne : name x = name y) :
+    x = y := by
+  induction l with
+  | nil => trivial
+  | cons a rest ih =>
+      have ⟨hna, hsRest⟩ := List.nodup_cons.mp hs
+      simp only [List.mem_cons] at hx hy
+      cases hx with
+      | inl hx =>
+          subst hx
+          cases hy with
+          | inl hy => exact hy.symm
+          | inr hy =>
+              exact absurd (List.mem_map.mpr ⟨y, hy, hne.symm⟩) hna
+      | inr hx =>
+          cases hy with
+          | inl hy =>
+              subst hy
+              exact absurd (List.mem_map.mpr ⟨x, hx, hne⟩) hna
+          | inr hy =>
+              exact ih hsRest hx hy 
+
+theorem Schema.field_eq_of_name_eq
+    {s : Schema} (hs : s.fieldNames.Nodup)
+    {f₁ f₂ : Field}
+    (h₁ : f₁ ∈ s.fields) (h₂ : f₂ ∈ s.fields)
+    (hne : f₁.name = f₂.name) :
+    f₁ = f₂ := by
+  dsimp [Schema.fieldNames] at hs
+  exact List.eq_of_mem_of_name_eq_of_nodup (·.name) hs h₁ h₂ hne
+
+theorem HasColList.field_mem
+    {fs : SchemaFields} {n : FieldName}
+    (h : HasColList fs n) :
+    h.field ∈ fs := by
+  induction h with
+  | here h =>
+      exact List.mem_cons_self 
+  | there h ih =>
+      exact List.mem_cons_of_mem _ ih
+
+theorem HasCol.required_of_primaryKey
+    {s : WellFormedSchema} {n : FieldName}
+    (hn : n ∈ s.val.primaryKey) (h : HasCol s n) :
+    (HasColList.field h).required = true := by
+  -- 1. From WellFormed: some required field named n
+  obtain ⟨f, hfMem, hname, hreq⟩ :
+      ∃ f ∈ s.val.fields, f.name = n ∧ f.required = true := by
+    exact WellFormedSchema.primaryKey_required hn
+
+  -- 2. The HasCol witness points at a field in the list named n
+  have hMem : h.field ∈ s.val.fields :=
+    HasColList.field_mem h
+  have hName : h.field.name = n :=
+    HasColList.field_name h
+
+  -- 3. Same name + both ∈ fields + Nodup names ⇒ same field
+  have hNodup : s.val.fieldNames.Nodup := by
+    rcases s.property with ⟨hNodup, _⟩
+    exact hNodup
+
+  have hEq : h.field = f :=
+    Schema.field_eq_of_name_eq hNodup hMem hfMem
+      (hName.trans hname.symm)
+
+  -- 4. Transfer required
+  rw [hEq]
+  exact hreq
+
+/-- If a field name is in the schema, then `findHasCol?` returns a witness. -/
+def WellFormedSchema.hasCol
+    {s : WellFormedSchema} {n : FieldName}
+    (hin : n ∈ s.val.fieldNames) : HasCol s n :=
+  (s.findHasCol? n).get
+    (WellFormedSchema.findHasCol?_isSome_of_mem hin)
+
+def Row.pkCell {s : WellFormedSchema}
+    (r : Row s) (n : FieldName) (hn : n ∈ s.val.primaryKey) :
+    (f : Field) × f.refinedType :=
+  have hin : n ∈ s.val.fieldNames :=
+    WellFormedSchema.primaryKey_subset_fieldNames hn
+  let h : HasCol s n := s.hasCol hin
+  have hr : h.field.required = true :=
+    HasCol.required_of_primaryKey hn h
+  let cell : h.field.refinedType := by
+    simpa [Field.cellType, hr] using r.get h
+  ⟨h.field, cell⟩
+
+def Row.primaryKeyProjection {s : WellFormedSchema} (r : Row s) :
+    List ((f : Field) × f.refinedType) :=
+  s.val.primaryKey.attach.map fun ⟨n, hn⟩ =>
+    Row.pkCell r n hn
 
 def Row.primaryKeyProjection? {s : WellFormedSchema} (r : Row s) :
     Option (List ((f : Field) × Field.refinedType f)) :=
@@ -170,8 +267,7 @@ def Row.primaryKeyProjection? {s : WellFormedSchema} (r : Row s) :
 
 def Table.primaryKeyOK {s : WellFormedSchema} (t : Table s) : Bool :=
   s.val.primaryKey.isEmpty ||
-  let keys := t.filterMap (Row.primaryKeyProjection? (s := s))
-  keys.length == t.length && decide keys.Nodup
+    decide (t.map (Row.primaryKeyProjection (s := s))).Nodup
 
 /-- Check if the uniqueness constraint of all specified columns are satisfied -/
 def Table.uniqueOK {s : WellFormedSchema} (t : Table s) : Bool :=
