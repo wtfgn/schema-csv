@@ -3,7 +3,7 @@ module
 public import SchemaCsv.HList
 public import SchemaCsv.Schema
 public import SchemaCsv.HasCol
-public import Mathlib.Data.List.Nodup
+import Mathlib.Data.List.Nodup
 
 public section
 
