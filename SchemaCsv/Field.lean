@@ -11,7 +11,7 @@ structure Field where
   name : FieldName
   type : FieldType := .string
   title : Option String := none
-  format: FormatOf type := default
+  format: FormatOf type := default -- TODO: metadata for now
   exampleValue : Option String := none
   description : Option String := none
   constraints : ConstraintsOf type

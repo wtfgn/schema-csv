@@ -6,6 +6,9 @@ public section
 
 namespace SchemaCsv
 
+--TODO:
+-- Format is metadata for now
+-- It only surfaces once casting is implemented
 inductive StringFormat where
   | default -- any valid string
   | email -- a valid email address
