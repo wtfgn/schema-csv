@@ -7,7 +7,7 @@ def pid : Field := {
   type := .integer,
   constraints := {
     required := true,
-    unique := true,
+    unique := false,
     enum := some [1, 2, 3]
   }
 }
@@ -39,18 +39,18 @@ def people : WellFormedSchema :=
 
 def alice : Row people :=
   .cons ⟨1, by decide⟩ <|
-  .cons ( ⟨"alice", by decide⟩) <|
+  .cons (⟨"alice", by decide⟩) <|
   .cons (some ⟨30, by decide⟩) <|
   .nil
 
 def tom : Row people :=
-  .cons ⟨2, by decide⟩ <|
-  .cons ( ⟨"tom", by decide⟩) <|
+  .cons ⟨3, by decide⟩ <|
+  .cons (⟨"tom", by decide⟩) <|
   .cons (some ⟨14, by decide⟩) .nil
 
 def billy : Row people :=
   .cons ⟨3, by decide⟩ <|
-  .cons ( ⟨"billy", by decide⟩) <|
+  .cons (⟨"billy", by decide⟩) <|
   .cons none .nil
 
 def peopleTable : WellFormedTable people :=
