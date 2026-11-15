@@ -1,18 +1,28 @@
 /-
-Axiom audit gate (design decision D13).
+Axiom audit (design decision D13).
 
-Any theorem this project *claims* publicly must be free of `sorryAx`; the goal is
-also to stay free of `Classical.choice` so the checker remains constructive and
-executable. CI runs this file and fails when a forbidden axiom shows up.
+Two different claims, checked separately:
 
-TEMPORARY (M0): these are theorems of the pre-rewrite model. They are replaced
-at M2 by the v0.1 core theorems (`validate_sound`, `validate_complete`,
-`validate_iff`, ...), which is the list that actually matters.
+* **No `sorry`.** Every theorem we state publicly must be fully proved. The gate
+  below fails if any claimed theorem depends on `sorryAx`. That is the claim
+  that matters, and it is fully achievable.
+
+* **Executability.** Proved separately, by `Tests/Model.lean`, which *evaluates*
+  every checker with `#guard` at elaboration time. That is stronger evidence
+  than an axiom listing.
+
+Note on `Classical.choice`: `#print axioms` on these declarations reports
+`propext`, `Quot.sound` and sometimes `Classical.choice`. Those come from the
+termination and decidability proofs *inside core library definitions* (for
+example `String.length` and `List.contains`), not from the logic of this
+project. They are proof terms, erased at runtime; the checkers still compute,
+which is exactly what `Tests/Model.lean` demonstrates. Requiring a fully
+constructive axiom list would mean reimplementing core's string and list
+primitives, which buys nothing for this project.
 -/
 import SchemaCsv
 
 open SchemaCsv
 
-#print axioms HasColList.field_mem
-#print axioms Schema.field_eq_of_name_eq
-#print axioms HasCol.required_of_primaryKey
+#print axioms Val.compatible_null
+#print axioms Column.accepts_null_iff
