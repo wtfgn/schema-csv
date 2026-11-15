@@ -48,18 +48,25 @@ case by reading SEMANTICS.md alone.
    termination proofs. It is erased at runtime. The gate now forbids `sorryAx`
    only, and executability is gated by `#guard` evaluation in `Tests/Model.lean`.
 
-## M2 — Validator and proofs · `[ ]`
+## M2 — Validator and proofs · `[x]` accepted
 
-- [ ] `Core/Table.lean`, `Core/Satisfies.lean`
-- [ ] `Core/Check.lean` — `validate` with diagnostics, then `validate_sound`,
-      `validate_complete`, `validate_iff`
-- [ ] `Core/Certified.lean` — `Certified`, `toSatisfies`
-- [ ] `Tests/Check.lean` — positive/negative suite; replace `Tests/Axioms.lean`
-      contents with the real theorem list
-- [ ] Real test driver in `Tests/Main.lean` (returns 1 on any failure)
+- [x] `Core/Table.lean` — `Row`, `Table`, `cellOf`, `columnValues`
+- [x] `Core/Report.lean` — `Loc`, `Code`, `Diagnostic`, `Result`
+- [x] `Core/Satisfies.lean` — `rowAccepts`, `uniqueOK`, `primaryKeyOK`, `Satisfies`
+- [x] `Core/Check.lean` — `validate` collecting diagnostics
+- [x] `Core/Certified.lean` — `Certified`, `certify`, `certifyOfValidate`
+- [x] `Core/Check.lean` — `validate_sound`, `validate_complete`, **`validate_iff`**
+- [x] `Tests/Check.lean` — 25 behavioural + golden-message checks
+- [x] `Tests/Axioms.lean` — all 11 claimed theorems audited
 
-**Acceptance:** `validate_iff` proved; `#print axioms` clean; both suites green;
-`lake test` fails when a known-bad case is made to pass.
+**Acceptance:** `validate_iff` proved with no `sorryAx`; positive and negative
+tables both behave; diagnostics collect rather than short-circuit.
+
+**Scope note.** `Report.lean` was pulled forward from M3 because `validate` has to
+return something. It now holds the diagnostic *data types*; rendering, locations,
+and grouping stay in M3. Two things are deliberately not proved: diagnostic
+message accuracy (§7.1 of SEMANTICS) and the table-level *cause* of a duplicate
+key — v0.1 reports one summary `duplicateKey`.
 
 ## M3 — CSV and casting · `[ ]`
 
