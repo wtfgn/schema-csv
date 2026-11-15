@@ -111,8 +111,8 @@ SchemaCsv/            -- lean library, zero dependencies
   Main.lean           -- entry point
 Tests/                -- `lake test`; every doc claim appears here
 examples/             -- schemas + good/bad CSVs, shared by tests and docs
-docs/                 -- this file and ROADMAP.md today;
-                         SEMANTICS.md lands at M1, SCHEMA.md at M4
+docs/                 -- DESIGN.md, ROADMAP.md, SEMANTICS.md;
+                         SCHEMA.md lands at M4
 ```
 
 **Layering rule (enforced in CI):** a module under `Core/` may import only from
@@ -219,7 +219,7 @@ bytes ──IO.FS──▶ String
 | **D10** | Diagnostics are a first-class module, not strings | Required: `file:line:column`, `--json` output, error aggregation with a cap, exit codes 0/1/2 | `Except String` |
 | **D11** | `docs/SEMANTICS.md` is written before the validator and is the specification of record | Plan Stage 1's acceptance test: an independent reader can decide schema+table by hand | Code-first |
 | **D12** | Delete `HList.lean`, `HasCol.lean`, `refinedType`, `cellType`, `primaryKeyProjection?`, `Test.lean` | Redundant under D1/D2; git history is the archive; two row models is worse than either | Archive in-tree |
-| **D13** | CI gates: `--wfail`, forbidden-construct grep, axiom audit (`#print axioms`) | "No sorry" must be a build gate, not a claim | Trust review |
+| **D13** | CI gates: `--wfail`, forbidden-construct grep, `sorryAx` audit, `#guard` evaluation tests | "No sorry" must be a build gate. Executability is gated by evaluation, not by axiom lists: `Classical.choice` in `#print axioms` comes from core's own termination proofs and is erased at runtime | Trust review; a fully constructive axiom list |
 | **D14** | Name stays `SchemaCsv`; binary is `schema-csv` | Module paths, history and toolchain already agree; the plan's `tabular` was a placeholder | Rename to `tabular` |
 
 ## 5. Semantic policies (the contract)
@@ -259,10 +259,19 @@ CI fails on any of:
 * a build warning (`lake build --wfail`);
 * `sorry`, `admit`, `axiom`, `unsafe`, `partial def`, `native_decide` anywhere
   under `SchemaCsv/`;
-* a claimed theorem depending on `sorryAx` (and, once the core lands, on
-  `Classical.choice`);
-* a failing `lake test` suite;
+* a claimed theorem depending on `sorryAx`;
+* a failing `lake test` suite — which is also the executability gate, because
+  `Tests/Model.lean` *evaluates* every checker with `#guard`;
 * a doc example that no longer reproduces (`examples/` + golden outputs).
+
+**Deliberately not gated: `Classical.choice`.** It appears in `#print axioms`
+output for declarations that unfold core definitions such as `String.length` or
+`List.contains`, whose own termination proofs use it. Those are proof terms,
+erased at runtime: the checkers still compute, as `#guard` demonstrates. Making
+the axiom list fully constructive would mean reimplementing core's string and
+list primitives, which buys this project nothing. The property we actually need
+— *the checker sets no obligation aside* — is covered by the `sorryAx` gate plus
+the evaluation tests.
 
 ## 7. Extension policy
 
