@@ -1,6 +1,6 @@
 name = "schema-csv"
 version = "0.1.0"
-defaultTargets = ["SchemaCsv", "SchemaCsv.Example", "schema-csv", "Tests", "tests"]
+defaultTargets = ["SchemaCsv", "schema-csv", "Tests", "tests"]
 testDriver = "tests"
 
 # Zero external dependencies. The library is plain Lean 4 core + Std,
