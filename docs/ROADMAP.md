@@ -21,18 +21,32 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` not started
 
 **Acceptance:** cold `lake build` under 15 s; CI green; design doc merged.
 
-## M1 — Abstract model · `[ ]`
+## M1 — Abstract model · `[x]` accepted
 
-- [ ] `docs/SEMANTICS.md` — the abstract model in notation, the eight policies,
-      the cast rule table, and a set of 20 hand-computed positive/negative cases
-- [ ] `Core/Val.lean` — `Val`, `Ty`, `compatible`, `le`, `render`
-- [ ] `Core/Column.lean` — `Column`, `Column.WellFormed` (decidable), `Column.accepts`
-- [ ] `Core/Schema.lean` — `Schema`, `Schema.WellFormed` (decidable), `fieldOf?`
-- [ ] Delete `HList.lean`, `HasCol.lean`, `refinedType`, `cellType` (decision D12)
+- [x] `docs/SEMANTICS.md` — the abstract model in notation, the eight policies,
+      the cast rule table, and 30 worked cases
+- [x] `Core/Val.lean` — `Val`, `Ty`, `compatible`, `le`, `render`
+- [x] `Core/Column.lean` — `Column`, `Column.WellFormed`, `Column.accepts`
+- [x] `Core/Schema.lean` — `Schema`, `Schema.WellFormed`, `fieldOf?`, `isMissingValue`
+- [x] Delete `HList`, `HasCol`, `Table/*`, `Field`, `Constraints`, `Format`,
+      `Basic`, the old `Schema`, and `Example` (decision D12)
+- [x] `Tests/Model.lean` — 30 `#guard` cases + 2 theorems
 
 **Acceptance:** every hand-computed case in `SEMANTICS.md` appears as an
-`example`/`#guard` in `Tests/`; a reader who has never seen the code can decide
-a table by reading SEMANTICS.md alone.
+`example`/`#guard` in `Tests/`; a reader who has never seen the code can decide a
+case by reading SEMANTICS.md alone.
+
+**Two findings during M1 that changed the plan:**
+
+1. *Encoding.* Every predicate is now `abbrev P := checkerB … = true`. The
+   original design had hand-written `Decidable` instances per predicate
+   (decision D6); those could not be written robustly against a 13-field record,
+   and `abbrev` over a `Bool` checker makes `Decidable` automatic while keeping
+   one definition. `docs/DESIGN.md` §6 and decision D13 were updated to match.
+2. *Axiom audit.* Requiring the absence of `Classical.choice` is not achievable:
+   core definitions (`String.length`, `List.contains`) carry it inside their own
+   termination proofs. It is erased at runtime. The gate now forbids `sorryAx`
+   only, and executability is gated by `#guard` evaluation in `Tests/Model.lean`.
 
 ## M2 — Validator and proofs · `[ ]`
 
@@ -103,10 +117,9 @@ README.md.
 Regex `pattern`; date/time types; foreign keys; YAML parser; streaming; Arrow /
 Parquet interop; Python bindings; schema inference beyond `infer`.
 
-## Known pre-rewrite code still present
+## Pre-rewrite code
 
-Until M1/M2 these files are still the old model and are scheduled for deletion:
-`SchemaCsv/HList.lean`, `SchemaCsv/HasCol.lean`, `SchemaCsv/Table/{Basic,PrimaryKey}.lean`,
-`SchemaCsv/Example.lean`, and the `refinedType` / `cellType` machinery in
-`SchemaCsv/Field.lean`. They build today and are useful only as a reference while
-M1 lands.
+Removed at M1: `SchemaCsv/{Basic,Constraints,Format,Field,Schema,HList,HasCol,Table,Example}.lean`
+and `SchemaCsv/Table/`. The old model (validity encoded in per-cell dependent
+types) is preserved in git history at `a528489` and earlier. The library is now
+`SchemaCsv/Core/{Val,Column,Schema}.lean` only.
