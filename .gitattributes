@@ -1,0 +1,15 @@
+# Normalise the working tree to LF. Without this, Git on Windows checks files
+# out with CRLF, shell steps in CI break, and every diff is noisy.
+* text=auto eol=lf
+
+*.lean   text eol=lf
+*.toml   text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+
+# Test fixtures that must keep their original bytes (e.g. a deliberately
+# CRLF-delimited CSV) should be marked explicitly at the time they are added:
+#   examples/crlf.csv -text
+# or generated at test time. Never rely on the checkout's line endings.

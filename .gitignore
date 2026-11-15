@@ -1,4 +1,5 @@
+# Lake build artifacts
 /.lake
-/.plan
-# Ignore anything with Test.lean
-Test*.lean
+
+# Local scratch (never committed; do not blanket-ignore tests)
+/scratch/

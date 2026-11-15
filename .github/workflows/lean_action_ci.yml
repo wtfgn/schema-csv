@@ -1,14 +1,98 @@
-name: Lean Action CI
+name: CI
 
 on:
   push:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v5
-      - uses: leanprover/lean-action@v1
+
+      # No external packages, so caching is only about the toolchain itself.
+      - name: Cache elan toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.elan
+          key: elan-${{ runner.os }}-${{ hashFiles('lean-toolchain') }}
+          restore-keys: elan-${{ runner.os }}-
+
+      - name: Install elan (if not restored from cache)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v lake >/dev/null 2>&1; then
+            curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+              | sh -s -- -y --default-toolchain none
+          fi
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build (warnings are errors)
+        shell: bash
+        run: |
+          set -euo pipefail
+          lake build --wfail
+
+      - name: Tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          lake test
+
+      # Gate D13: no way to bypass a proof obligation.
+      - name: No forbidden constructs
+        shell: bash
+        run: |
+          set -euo pipefail
+          matches=$(grep -rnE \
+            '(\bsorry\b|\badmit\b|\bnative_decide\b|^[[:space:]]*axiom[[:space:]]|\bunsafe[[:space:]]+(def|theorem|structure|instance|abbrev|opaque|inductive|class)\b|\bpartial[[:space:]]+def\b)' \
+            SchemaCsv/ || true)
+          if [ -n "$matches" ]; then
+            echo "::error::forbidden construct found in the library"
+            echo "$matches"
+            exit 1
+          fi
+          echo "ok: no forbidden constructs"
+
+      # Gate D13: a claimed theorem must not depend on a cheat.
+      - name: Axiom audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=$(lake env lean Tests/Axioms.lean 2>&1)
+          echo "$out"
+          status=0
+          for bad in sorryAx Classical.choice; do
+            if grep -q "$bad" <<<"$out"; then
+              echo "::error::a claimed theorem depends on $bad"
+              status=1
+            fi
+          done
+          exit $status
+
+      # Gate D1: the verified kernel imports only itself.
+      - name: Core layering
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d SchemaCsv/Core ]; then
+            bad=$(grep -rnE '^[[:space:]]*(public[[:space:]]+)?import ' SchemaCsv/Core/ \
+                  | grep -vE 'import SchemaCsv\.Core' || true)
+            if [ -n "$bad" ]; then
+              echo "::error::SchemaCsv/Core may only import SchemaCsv.Core.*"
+              echo "$bad"
+              exit 1
+            fi
+          fi
+          echo "ok: Core layering"

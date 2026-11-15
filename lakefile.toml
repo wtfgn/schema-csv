@@ -1,14 +1,21 @@
 name = "schema-csv"
 version = "0.1.0"
-defaultTargets = ["schema-csv"]
+defaultTargets = ["SchemaCsv", "SchemaCsv.Example", "schema-csv", "Tests", "tests"]
+testDriver = "tests"
 
+# Zero external dependencies. The library is plain Lean 4 core + Std,
+# which keeps cold builds at a few seconds. Do not add a `[[require]]`
+# block without revisiting docs/DESIGN.md decision D8.
 [[lean_lib]]
 name = "SchemaCsv"
+
+[[lean_lib]]
+name = "Tests"
 
 [[lean_exe]]
 name = "schema-csv"
 root = "Main"
 
-[[require]]
-name = "mathlib"
-scope = "leanprover-community"
+[[lean_exe]]
+name = "tests"
+root = "Tests.Main"

@@ -2,7 +2,6 @@ module
 
 public import SchemaCsv.Table.Basic
 public import SchemaCsv.Table.PrimaryKey
-public import Mathlib.Data.List.Nodup
 
 public section
 
