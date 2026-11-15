@@ -26,3 +26,12 @@ open SchemaCsv
 
 #print axioms Val.compatible_null
 #print axioms Column.accepts_null_iff
+#print axioms SchemaCsv.tableConstraintsB_iff
+#print axioms SchemaCsv.checkCell_none_iff
+#print axioms SchemaCsv.validateCells_nil_iff
+#print axioms SchemaCsv.validateRow_ok_iff
+#print axioms SchemaCsv.collectRowDiagnostics_nil_iff
+#print axioms SchemaCsv.constraintDiagnostics_nil_iff
+#print axioms SchemaCsv.validate_iff
+#print axioms SchemaCsv.validate_sound
+#print axioms SchemaCsv.validate_complete
