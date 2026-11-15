@@ -1,14 +1,13 @@
 # SchemaCsv — semantics
 
-> **Status:** M1. This document is the **specification of record**. The Lean in
-> `SchemaCsv/Core/` is required to match it, and
-> [`Tests/Model.lean`](../Tests/Model.lean) encodes every worked example below as
-> an executable check. When the two disagree, this document is right and the
-> code is a bug.
+> **Status:** M2. This document is the **specification of record**. The Lean in
+> `SchemaCsv/Core/` is required to match it, and `Tests/Model.lean` +
+> `Tests/Check.lean` encode every worked example below as an executable check.
+> When the two disagree, this document is right and the code is a bug.
 >
-> Implemented here: types, values, columns, schemas — §2–§6.
-> Designed here, implemented in M2/M3: rows, tables, satisfaction, casting —
-> §7–§9 (marked).
+> Implemented: types, values, columns, schemas — §2–§6; rows, tables,
+> satisfaction, the validator — §7.
+> Designed here, implemented in M3: casting and diagnostics — §8–§9.
 
 ---
 
@@ -197,22 +196,23 @@ and avoids a special case in the checker.
 
 Lean: `Schema.WellFormed`.
 
-## 7. Tables and satisfaction — *M2*
+## 7. Tables and satisfaction
 
-Declared here so the contract is visible; implemented next.
+Implemented in M2: `SchemaCsv/Core/Table.lean`, `Satisfies.lean`.
 
 ```
 Row   = List Val          -- aligned with s.fields by position
 Table = List Row
 
-rowAccepts s r = |r| = |s.fields| ∧ ∀ i < |s.fields|, accepts s.fields[i] r[i]
+rowAccepts s r = the two lists end together ∧ every cell is accepted by its column
+                 (a width mismatch is false — never padding)
 
 uniqueOK s t  = ∀ c ∈ s.fields with c.unique,
-                  no two distinct rows have the same non-null value at c
+                  the non-null values of column c across t are pairwise distinct
                   (nulls are distinct, policy 2)
 
 primaryKeyOK s t = s.primaryKey = [] ∨
-                   no two distinct rows agree on every primary-key column
+                   the key projections of the rows of t are pairwise distinct
 
 Satisfies s t = WellFormed s
               ∧ (∀ r ∈ t, rowAccepts s r)
@@ -226,7 +226,35 @@ null) is a policy flag, not a redesign.
 
 A row whose length differs from the schema's field count is **not** silently
 padded or truncated: `rowAccepts` is false, and the checker reports
-`tooFewFields` / `tooManyFields` with the row's line number.
+`fieldCount` with the row's position.
+
+`WellFormed s` is a conjunct of `Satisfies` on purpose: a malformed schema cannot
+make data valid, and including it means "the validator accepted" also certifies
+the schema.
+
+Lean: `rowAccepts`, `uniqueOK`, `primaryKeyOK`, `Satisfies`; the projection used
+for the key is `keyOf` (schema field order), and `tableConstraintsB` is the
+conjunction of the two table-level checks.
+
+### 7.1 The validator
+
+`validate : Schema → Table → Result Unit` decides `Satisfies`, and on failure
+returns a list of `Diagnostic`s. It **collects** errors rather than stopping at
+the first, so one run reports every bad row.
+
+The agreement between the checker and this section is a theorem, not a test:
+
+```
+validate_iff      : validate s t = .ok () ↔ Satisfies s t
+validate_sound    : validate s t = .ok () → Satisfies s t
+validate_complete : Satisfies s t → validate s t = .ok ()
+```
+
+What is *not* proved: that the diagnostic **messages** are accurate or complete.
+The accept/reject decision is verified for all inputs; the text is covered by
+golden tests. Splitting the claim this way is deliberate — proving message
+quality would roughly double the proof surface for a property users validate by
+reading, and the tests catch regressions.
 
 ## 8. Casting — *M3, normative for that milestone*
 
@@ -332,23 +360,32 @@ evaluates it at build time. Column `age` means `{ ty := num, min := 0, max := 15
 
 ## 12. What is proved, and what is not
 
-**Proved (M1).**
+**Proved (M1–M2).**
 
 | Name | Statement |
 |---|---|
 | `Val.compatible_null` | `⊥` inhabits every type |
 | `Column.accepts_null_iff` | a column accepts `⊥` iff it is not required |
+| `tableConstraintsB_iff` | the table-level checker is the conjunction of the two constraints |
+| `checkCell_none_iff` | a cell produces no diagnostic iff the column accepts it |
+| `validateCells_nil_iff` | a row produces no diagnostics iff every cell is accepted |
+| `validateRow_ok_iff` | a row validates iff it is accepted |
+| `collectRowDiagnostics_nil_iff` | all rows are clean iff every row is accepted |
+| `constraintDiagnostics_nil_iff` | table-level diagnostics are empty iff both constraints hold |
+| **`validate_iff`** | **acceptance is exactly satisfaction, for all schemas and tables** |
+| `validate_sound` | accepted ⇒ satisfies |
+| `validate_complete` | satisfies ⇒ accepted |
 
-**Checked by evaluation, not proof (M1).** All of §11. `#guard` evaluates the
-checkers at build time, so a broken checker fails the build; it is evidence of
-correct behaviour on the listed cases, not a theorem about all inputs.
+**Checked by evaluation, not proof.** Every case in §11 and all of
+`Tests/Check.lean`. `#guard` evaluates the checkers at build time, so a broken
+checker fails the build; it is evidence on the listed cases, not a theorem about
+all inputs. This is also the project's executability gate.
 
-**Not yet proved (M2+).**
+**Not yet proved (M3+).**
 
-* `validate_sound` / `validate_complete` / `validate_iff` — the checker agrees
-  with §7 for *all* schemas and tables.
-* cast correctness (§8) against this document.
-* CSV round-trip.
+* cast correctness (§8) against this document;
+* CSV parse/render round-trip;
+* diagnostic message accuracy (deliberate; see §7.1).
 
 **Explicitly not guaranteed, in any version yet.**
 
